@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html class="dark" lang="th">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>Dorm Portal | ระบบจัดการหอพัก</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1" rel="stylesheet"/>
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: { "primary": "#10b981", "background-dark": "#0f172a" },
+                    fontFamily: { "display": ["Sarabun", "sans-serif"] }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Sarabun', sans-serif; scroll-behavior: smooth; }
+        .page { display: none; min-height: calc(100vh - 80px); }
+        .page.active { display: block; animation: fadeIn 0.4s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .nav-link.active { color: #10b981; border-bottom: 2px solid #10b981; }
+        .modal { display: none; position: fixed; inset: 0; z-index: 100; align-items: center; justify-content: center; background: rgba(0,0,0,0.8); backdrop-blur: 5px; }
+        .modal.active { display: flex; animation: fadeIn 0.3s ease-in-out; }
+    </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100">
+
+    <div id="paymentModal" class="modal p-6">
+        <div class="bg-white dark:bg-slate-900 p-8 rounded-[2.5rem] max-w-sm w-full text-center border border-white/10">
+            <h3 class="text-xl font-bold mb-2">Scan to Pay</h3>
+            <p id="payAmount" class="text-primary font-bold text-2xl mb-6">฿0.00</p>
+            <div class="bg-white p-4 rounded-2xl inline-block mb-6 shadow-xl">
+                <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=DormPaymentDemo" alt="QR Code" class="w-48 h-48">
+            </div>
+            <p class="text-xs text-slate-500 mb-6">กรุณาชำระเงินภายใน 15 นาที</p>
+            <button onclick="closeModal()" class="w-full bg-primary hover:bg-emerald-500 text-white font-bold py-4 rounded-2xl transition-all">เรียบร้อย</button>
+        </div>
+    </div>
+
+    <div id="loginPage" class="page active !min-h-screen">
+        <main class="h-screen flex items-center justify-center relative overflow-hidden">
+            <div class="absolute inset-0 z-0">
+                <div class="absolute inset-0 bg-gradient-to-br from-slate-950 via-slate-900/60 to-transparent z-10"></div>
+                <img class="w-full h-full object-cover" src="https://images.unsplash.com/photo-1555854817-5b2260d13857?q=80&w=1600" alt="Dorm">
+            </div>
+            <div class="container mx-auto px-6 relative z-20 grid lg:grid-cols-2 gap-12 items-center text-center lg:text-left">
+                <div class="hidden lg:block space-y-6 text-white">
+                    <h1 class="text-6xl font-bold leading-tight">Folk<span class="text-primary">hotel</span> <br/> ระบบหอพัก.</h1>
+                    <p class="text-xl text-slate-300">เข้าสู่ระบบเพื่อจองห้องพักและติดตามสถานะการชำระเงิน</p>
+                </div>
+                <div class="w-full max-w-md mx-auto bg-white/10 backdrop-blur-xl p-8 rounded-3xl border border-white/20 shadow-2xl">
+                    <h3 class="text-2xl font-bold text-white mb-6">user Login</h3>
+                    <form onsubmit="handleLogin(event)" class="space-y-4">
+                        <input required class="w-full bg-slate-900/50 border border-slate-700 rounded-xl py-4 px-4 text-white outline-none focus:border-primary" placeholder="รหัสนักศึกษา" type="text"/>
+                        <input required class="w-full bg-slate-900/50 border border-slate-700 rounded-xl py-4 px-4 text-white outline-none focus:border-primary" placeholder="รหัสผ่าน" type="password"/>
+                        <button class="w-full bg-primary hover:bg-emerald-500 text-white font-bold py-4 rounded-xl shadow-lg transition-all active:scale-95">เข้าสู่ระบบ</button>
+                    </form>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div id="appContainer" class="hidden">
+        <header class="sticky top-0 z-50 w-full border-b border-white/10 bg-slate-950/80 backdrop-blur-md px-6 lg:px-20 py-4">
+            <div class="max-w-7xl mx-auto flex items-center justify-between">
+                <div class="flex items-center gap-10">
+                    <div class="flex items-center gap-2 text-primary">
+                        <span class="material-symbols-outlined text-3xl font-bold">apartment</span>
+                        <span class="font-bold text-xl text-white">Folk<span class="text-primary">hotel</span></span>
+                    </div>
+                    <nav class="hidden md:flex items-center gap-8">
+                        <button onclick="showPage('homePage')" id="nav-homePage" class="nav-link text-sm font-medium pb-1 active">Home</button>
+                        <button onclick="showPage('roomsPage')" id="nav-roomsPage" class="nav-link text-slate-400 hover:text-primary text-sm font-medium pb-1 transition-all">Rooms</button>
+                        <button onclick="showPage('bookingsPage')" id="nav-bookingsPage" class="nav-link text-slate-400 hover:text-primary text-sm font-medium pb-1 transition-all">Bookings</button>
+                    </nav>
+                </div>
+                <div class="flex items-center gap-4">
+                    <div class="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold border border-primary/30">SD</div>
+                    <button onclick="handleLogout()" class="text-slate-400 hover:text-red-400"><span class="material-symbols-outlined">logout</span></button>
+                </div>
+            </div>
+        </header>
+
+        <div id="homePage" class="page active max-w-7xl mx-auto px-6 lg:px-20 py-12">
+            <div class="grid lg:grid-cols-3 gap-8">
+                <div class="lg:col-span-2 bg-gradient-to-r from-primary to-emerald-600 p-10 rounded-[2.5rem] text-white relative overflow-hidden shadow-2xl">
+                    <div class="relative z-10">
+                        <h2 class="text-4xl font-bold mb-4">ยินดีต้อนรับ Somchai 👋</h2>
+                        <p class="opacity-90 mb-8 max-w-md text-lg">จัดการเรื่องหอพักของคุณได้ง่ายๆ ในที่เดียว เริ่มต้นจองห้องพักวันนี้</p>
+                        <button onclick="showPage('roomsPage')" class="bg-white text-primary px-8 py-4 rounded-2xl font-bold shadow-xl hover:scale-105 transition-transform">ไปที่หน้าจองห้องพัก</button>
+                    </div>
+                    <span class="material-symbols-outlined absolute -right-4 -bottom-4 text-[220px] opacity-20">apartment</span>
+                </div>
+                <div class="bg-slate-900/50 p-8 rounded-[2.5rem] border border-white/5">
+                    <h3 class="font-bold text-xl mb-6">Latest Updates</h3>
+                    <div class="space-y-4">
+                        <div class="p-4 bg-white/5 rounded-2xl border-l-4 border-primary"><p class="text-sm font-bold">ไฟดับช่วงเช้า</p><p class="text-xs text-slate-500 mt-1">พรุ่งนี้ 09:00 น.</p></div>
+                        <div class="p-4 bg-white/5 rounded-2xl border-l-4 border-blue-500"><p class="text-sm font-bold">พัสดุมาถึง</p><p class="text-xs text-slate-500 mt-1">รับได้ที่สำนักงาน</p></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="roomsPage" class="page max-w-7xl mx-auto px-6 lg:px-20 py-12">
+            <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+                <div>
+                    <h1 class="text-4xl font-extrabold text-white">FIND YOUR <span class="text-primary">ROOM</span></h1>
+                    <p class="text-slate-400 mt-2">ผลการค้นหา: <span id="roomCount" class="text-primary font-bold">0</span> รายการ</p>
+                </div>
+                <div class="flex bg-slate-900 p-1.5 rounded-2xl border border-white/5 shadow-inner">
+                    <button onclick="filterRooms('all')" class="filter-btn active px-6 py-2.5 rounded-xl text-sm font-bold bg-primary text-white">ทั้งหมด</button>
+                    <button onclick="filterRooms('single')" class="filter-btn px-6 py-2.5 rounded-xl text-sm font-bold text-slate-400">เตียงเดี่ยว</button>
+                    <button onclick="filterRooms('double')" class="filter-btn px-6 py-2.5 rounded-xl text-sm font-bold text-slate-400">เตียงคู่</button>
+                </div>
+            </div>
+            <div id="roomGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"></div>
+        </div>
+
+        <div id="bookingsPage" class="page max-w-7xl mx-auto px-6 lg:px-20 py-12">
+            <h1 class="text-4xl font-extrabold text-white mb-8">MY <span class="text-primary">BOOKINGS</span></h1>
+            <div class="bg-slate-900 border border-white/5 rounded-[2.5rem] overflow-hidden shadow-2xl">
+                <table class="w-full text-left">
+                    <thead class="bg-white/5 text-slate-400 text-xs uppercase tracking-widest">
+                        <tr>
+                            <th class="px-10 py-6">ห้องพัก</th>
+                            <th class="px-10 py-6">รายละเอียด</th>
+                            <th class="px-10 py-6">ราคา</th>
+                            <th class="px-10 py-6 text-center">สถานะ</th>
+                            <th class="px-10 py-6 text-right">แอคชั่น</th>
+                        </tr>
+                    </thead>
+                    <tbody id="bookingList" class="divide-y divide-white/5 text-white">
+                        </tbody>
+                </table>
+                <div id="emptyBooking" class="hidden py-20 text-center text-slate-500">
+                    <span class="material-symbols-outlined text-6xl mb-4">event_busy</span>
+                    <p>ยังไม่มีรายการจองของคุณในขณะนี้</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 1. ข้อมูลห้องพักต้นฉบับ
+        const roomsData = [
+            { id: 'RM-101', name: 'Standard Single', price: 4500, type: 'single', size: '24m²', img: 'https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?q=80&w=800' },
+            { id: 'RM-102', name: 'Cozy Solo Room', price: 4200, type: 'single', size: '22m²', img: 'https://images.unsplash.com/photo-1513694203232-719a280e022f?q=80&w=800' },
+            { id: 'RM-201', name: 'Deluxe Twin Bed', price: 6500, type: 'double', size: '36m²', img: 'https://images.unsplash.com/photo-1595526114035-0d45ed16cfbf?q=80&w=800' },
+            { id: 'RM-202', name: 'Couple Suite Room', price: 6800, type: 'double', size: '38m²', img: 'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?q=80&w=800' },
+            { id: 'RM-301', name: 'Premium Studio', price: 5500, type: 'single', size: '30m²', img: 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?q=80&w=800' },
+            { id: 'RM-305', name: 'Garden View Twin', price: 7200, type: 'double', size: '42m²', img: 'https://images.unsplash.com/photo-1540518614846-7eded433c457?q=80&w=800' }
+        ];
+
+        // 2. รายการการจอง (ที่เก็บข้อมูล Real-time)
+        let myBookings = [];
+
+        function displayRooms(data) {
+            const grid = document.getElementById('roomGrid');
+            document.getElementById('roomCount').innerText = data.length;
+            grid.innerHTML = '';
+            data.forEach(room => {
+                grid.innerHTML += `
+                    <div class="group bg-slate-900 rounded-[2.5rem] border border-white/5 overflow-hidden hover:border-primary/50 transition-all duration-500 shadow-lg">
+                        <div class="relative h-60">
+                            <img src="${room.img}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
+                            <div class="absolute top-5 left-5 bg-primary text-white text-[10px] font-extrabold px-3 py-1.5 rounded-full">AVAILABLE</div>
+                        </div>
+                        <div class="p-8">
+                            <div class="flex justify-between items-start mb-6">
+                                <div><h3 class="text-xl font-bold text-white">${room.name}</h3><p class="text-xs text-slate-500">${room.id} • ${room.size}</p></div>
+                                <p class="text-primary font-bold text-2xl">฿${room.price.toLocaleString()}</p>
+                            </div>
+                            <button onclick="bookRoom('${room.id}')" class="w-full bg-white/5 group-hover:bg-primary text-white font-bold py-4 rounded-2xl transition-all flex items-center justify-center gap-2">
+                                Book Now <span class="material-symbols-outlined text-lg">arrow_forward</span>
+                            </button>
+                        </div>
+                    </div>`;
+            });
+        }
+
+        // 3. ฟังก์ชันจองห้อง (Real-time Push)
+        function bookRoom(roomId) {
+            const room = roomsData.find(r => r.id === roomId);
+            const exists = myBookings.find(b => b.id === roomId);
+            if(exists) return alert('คุณจองห้องนี้ไปแล้ว!');
+
+            const newBooking = {
+                ...room,
+                date: new Date().toLocaleDateString('th-TH'),
+                status: 'pending'
+            };
+            myBookings.push(newBooking);
+            updateBookingTable();
+            alert(`จองห้อง ${roomId} เรียบร้อย! กรุณาไปตรวจสอบที่หน้า Bookings`);
+            showPage('bookingsPage');
+        }
+
+        // 4. อัปเดตตาราง Booking แบบ Real-time
+        function updateBookingTable() {
+            const list = document.getElementById('bookingList');
+            const empty = document.getElementById('emptyBooking');
+            list.innerHTML = '';
+
+            if (myBookings.length === 0) {
+                empty.classList.remove('hidden');
+                return;
+            }
+            empty.classList.add('hidden');
+
+            myBookings.forEach((b, index) => {
+                list.innerHTML += `
+                    <tr class="hover:bg-white/5 transition-colors">
+                        <td class="px-10 py-8 font-bold text-lg">${b.id}</td>
+                        <td class="px-10 py-8 text-slate-400">${b.name}<br><span class="text-[10px]">จองเมื่อ: ${b.date}</span></td>
+                        <td class="px-10 py-8 font-bold text-primary">฿${b.price.toLocaleString()}</td>
+                        <td class="px-10 py-8 text-center">
+                            <span class="px-3 py-1.5 bg-amber-500/10 text-amber-500 rounded-full text-[10px] font-extrabold border border-amber-500/20">PENDING</span>
+                        </td>
+                        <td class="px-10 py-8 text-right">
+                            <button onclick="openPayment(${b.price})" class="bg-primary/10 text-primary hover:bg-primary hover:text-white px-6 py-2.5 rounded-xl font-bold transition-all">ชำระเงิน</button>
+                        </td>
+                    </tr>`;
+            });
+        }
+
+        // 5. ระบบ Modal ชำระเงิน
+        function openPayment(amount) {
+            document.getElementById('payAmount').innerText = '฿' + amount.toLocaleString();
+            document.getElementById('paymentModal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('paymentModal').classList.remove('active');
+            alert('รับทราบ! ทางเจ้าหน้าที่จะตรวจสอบยอดเงินของคุณ');
+        }
+
+        // ฟังก์ชันพื้นฐานอื่นๆ
+        function filterRooms(type) {
+            const btns = document.querySelectorAll('.filter-btn');
+            btns.forEach(b => b.classList.remove('bg-primary', 'text-white', 'active'));
+            event.currentTarget.classList.add('bg-primary', 'text-white', 'active');
+            if(type === 'all') displayRooms(roomsData);
+            else displayRooms(roomsData.filter(r => r.type === type));
+        }
+
+        function showPage(pageId) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+            document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active', 'text-primary'));
+            const activeNav = document.getElementById('nav-' + pageId);
+            if(activeNav) activeNav.classList.add('active', 'text-primary');
+            window.scrollTo(0,0);
+        }
+
+        function handleLogin(e) {
+            e.preventDefault();
+            document.getElementById('loginPage').classList.remove('active');
+            document.getElementById('appContainer').classList.remove('hidden');
+            displayRooms(roomsData);
+            updateBookingTable();
+            showPage('homePage');
+        }
+
+        function handleLogout() { if(confirm('ต้องการออกจากระบบ?')) location.reload(); }
+    </script>
+</body>
+</html>Z
